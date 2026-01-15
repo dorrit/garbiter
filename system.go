@@ -1,6 +1,10 @@
 package garbiter
 
-import "github.com/dorrit/garbiter/model"
+import (
+	"strconv"
+
+	"github.com/dorrit/garbiter/model"
+)
 
 type SystemAPI struct {
 	svc model.Transport
@@ -31,11 +35,35 @@ func (s *SystemAPI) PrintResource() (*model.Resource, error) {
 		return nil, err
 	}
 
+	cpuCount, _ := strconv.Atoi(res["cpu-count"])
+	writeSinceBoot, _ := strconv.ParseInt(res["write-sect-since-reboot"], 10, 64)
+	writeTotal, _ := strconv.ParseInt(res["write-sect-total"], 10, 64)
+
 	return &model.Resource{
-		CPU:         res["cpu"],
-		CPULoad:     res["cpu-load"],
+		Uptime: res["uptime"],
+
+		Version:         res["version"],
+		BuildTime:       res["build-time"],
+		FactorySoftware: res["factory-software"],
+
 		FreeMemory:  res["free-memory"],
 		TotalMemory: res["total-memory"],
-		Uptime:      res["uptime"],
+
+		CPU:          res["cpu"],
+		CPUCount:     cpuCount,
+		CPUFrequency: res["cpu-frequency"],
+		CPULoad:      res["cpu-load"],
+
+		FreeHDDSpace:  res["free-hdd-space"],
+		TotalHDDSpace: res["total-hdd-space"],
+
+		WriteSectSinceBoot: writeSinceBoot,
+		WriteSectTotal:     writeTotal,
+
+		BadBlocks: res["bad-blocks"],
+
+		Architecture: res["architecture-name"],
+		BoardName:    res["board-name"],
+		Platform:     res["platform"],
 	}, nil
 }
