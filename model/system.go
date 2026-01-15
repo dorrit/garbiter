@@ -5,9 +5,28 @@ type Identity struct {
 }
 
 type Resource struct {
-	CPU         string
-	CPULoad     string
+	Uptime          string
+	Version         string
+	BuildTime       string
+	FactorySoftware string
+
 	FreeMemory  string
 	TotalMemory string
-	Uptime      string
+
+	CPU          string
+	CPUCount     int
+	CPUFrequency string
+	CPULoad      string
+
+	FreeHDDSpace  string
+	TotalHDDSpace string
+
+	WriteSectSinceBoot int64
+	WriteSectTotal     int64
+
+	BadBlocks string
+
+	Architecture string
+	BoardName    string
+	Platform     string
 }
