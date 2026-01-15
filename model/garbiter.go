@@ -1,14 +1,10 @@
 package model
 
-import (
-	"crypto/tls"
-)
+import "crypto/tls"
 
-type Garbiter struct {
-	Service GarbiterService
-}
-
-type GarbiterService interface {
+// Transport describes the minimal RouterOS transport implementation the client needs.
+// It intentionally mirrors the go-routeros client surface we rely on, making it easy to mock.
+type Transport interface {
 	Connect(address, username, password string, tlsConfig *tls.Config) error
 	Close() error
 	Ping() error

@@ -2,25 +2,31 @@ package garbiter
 
 import (
 	"crypto/tls"
+	"time"
 
-	"github.com/dorrit/garbiter/model"
 	"github.com/dorrit/garbiter/service"
 )
 
-func New(opts ...service.Option) *model.Garbiter {
-	return &model.Garbiter{
-		Service: service.NewRouterOSService(opts...),
-	}
+// Option configures the underlying transport.
+type Option = service.Option
+
+// WithTimeout wraps service.WithTimeout for convenience.
+func WithTimeout(timeout time.Duration) Option {
+	return service.WithTimeout(timeout)
 }
 
-func Connect(addr, user, pass string) (*model.Garbiter, error) {
-	g := New()
-	err := g.Service.Connect(addr, user, pass, nil)
-	return g, err
+func New(opts ...service.Option) *Client {
+	return &Client{service: service.NewRouterOSService(opts...)}
 }
 
-func ConnectTLS(addr, user, pass string, tlsCfg *tls.Config) (*model.Garbiter, error) {
-	g := New()
-	err := g.Service.Connect(addr, user, pass, tlsCfg)
-	return g, err
+func Connect(addr, user, pass string, opts ...service.Option) (*Client, error) {
+	c := New(opts...)
+	err := c.service.Connect(addr, user, pass, nil)
+	return c, err
+}
+
+func ConnectTLS(addr, user, pass string, tlsCfg *tls.Config, opts ...service.Option) (*Client, error) {
+	c := New(opts...)
+	err := c.service.Connect(addr, user, pass, tlsCfg)
+	return c, err
 }
