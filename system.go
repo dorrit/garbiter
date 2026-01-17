@@ -67,3 +67,78 @@ func (s *SystemAPI) PrintResource() (*model.Resource, error) {
 		Platform:     res["platform"],
 	}, nil
 }
+
+// PrintHealth returns the device health information in a typed struct.
+func (s *SystemAPI) PrintHealth() (*model.Health, error) {
+	res, err := s.svc.Run("/system/health/print")
+	if err != nil {
+		return nil, err
+	}
+	powerConsumption, _ := strconv.ParseFloat(res["power-consumption"], 64)
+	cpuTemperature, _ := strconv.ParseFloat(res["cpu-temperature"], 64)
+	fan1Speed, _ := strconv.Atoi(res["fan1-speed"])
+	fan2Speed, _ := strconv.Atoi(res["fan2-speed"])
+	fan3Speed, _ := strconv.Atoi(res["fan3-speed"])
+	fan4Speed, _ := strconv.Atoi(res["fan4-speed"])
+	boardTemp1, _ := strconv.ParseFloat(res["board-temp1"], 64)
+	boardTemp2, _ := strconv.ParseFloat(res["board-temp2"], 64)
+	psu1Voltage, _ := strconv.ParseFloat(res["psu1-voltage"], 64)
+	psu2Voltage, _ := strconv.ParseFloat(res["psu2-voltage"], 64)
+	psu1Current, _ := strconv.ParseFloat(res["psu1-current"], 64)
+	psu2Current, _ := strconv.ParseFloat(res["psu2-current"], 64)
+
+	voltage, _ := strconv.ParseFloat(res["voltage"], 64)
+	temperature, _ := strconv.ParseFloat(res["temperature"], 64)
+	return &model.Health{
+		Voltage:          voltage,
+		Temperature:      temperature,
+		PowerConsumption: powerConsumption,
+		CPUTemperature:   cpuTemperature,
+		Fan1Speed:        fan1Speed,
+		Fan2Speed:        fan2Speed,
+		Fan3Speed:        fan3Speed,
+		Fan4Speed:        fan4Speed,
+		BoardTemp1:       boardTemp1,
+		BoardTemp2:       boardTemp2,
+		PSU1Voltage:      psu1Voltage,
+		PSU2Voltage:      psu2Voltage,
+		PSU1Current:      psu1Current,
+		PSU2Current:      psu2Current,
+	}, nil
+}
+
+func (s *SystemAPI) SetHealth(set model.HealthSettings) error {
+	args := []string{}
+	if set.CPUOvertempCheck {
+		args = append(args, "=cpu-overtemp-check=yes")
+	}
+	if set.CPUOvertempThreshold > 0 {
+		args = append(args, "=cpu-overtemp-threshold="+strconv.Itoa(set.CPUOvertempThreshold))
+	}
+	if set.CPUOvertempStartupDelay.Abs() > 0 {
+		args = append(args, "=cpu-overtemp-startup-delay="+set.CPUOvertempStartupDelay.String())
+	}
+	if set.FanMode != "" {
+		args = append(args, "=fan-mode="+set.FanMode)
+	}
+	if FanOnThreshold := set.FanOnThreshold; FanOnThreshold > 0 {
+		args = append(args, "=fan-on-threshold="+strconv.Itoa(FanOnThreshold))
+	}
+	if set.FanSwitch != "" {
+		args = append(args, "=fan-switch="+set.FanSwitch)
+	}
+	if set.UseFan {
+		args = append(args, "=use-fan=yes")
+	} else {
+		args = append(args, "=use-fan=no")
+	}
+
+	if set.Extra != nil {
+		for k, v := range set.Extra {
+			args = append(args, "="+k+"="+v)
+		}
+	}
+
+	_, err := s.svc.Run("/system/health/settings/set", args...)
+	return err
+}
