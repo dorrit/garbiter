@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/dorrit/garbiter/model"
+	"github.com/dorrit/garbiter/service"
 )
 
 type SystemAPI struct {
@@ -12,6 +13,10 @@ type SystemAPI struct {
 
 // PrintIdentity returns the device identity in a typed struct.
 func (s *SystemAPI) PrintIdentity() (*model.Identity, error) {
+	if s == nil || s.svc == nil {
+		return nil, service.ErrNotConnected
+	}
+
 	res, err := s.svc.Run("/system/identity/print")
 	if err != nil {
 		return nil, err
@@ -24,12 +29,20 @@ func (s *SystemAPI) PrintIdentity() (*model.Identity, error) {
 
 // SetIdentity sets the device identity.
 func (s *SystemAPI) SetIdentity(name string) error {
+	if s == nil || s.svc == nil {
+		return service.ErrNotConnected
+	}
+
 	_, err := s.svc.Run("/system/identity/set", "=name="+name)
 	return err
 }
 
 // PrintResource returns the device resource information in a typed struct.
 func (s *SystemAPI) PrintResource() (*model.Resource, error) {
+	if s == nil || s.svc == nil {
+		return nil, service.ErrNotConnected
+	}
+
 	res, err := s.svc.Run("/system/resource/print")
 	if err != nil {
 		return nil, err
@@ -70,6 +83,10 @@ func (s *SystemAPI) PrintResource() (*model.Resource, error) {
 
 // PrintHealth returns the device health information in a typed struct.
 func (s *SystemAPI) PrintHealth() (*model.Health, error) {
+	if s == nil || s.svc == nil {
+		return nil, service.ErrNotConnected
+	}
+
 	res, err := s.svc.Run("/system/health/print")
 	if err != nil {
 		return nil, err
@@ -108,6 +125,10 @@ func (s *SystemAPI) PrintHealth() (*model.Health, error) {
 }
 
 func (s *SystemAPI) SetHealth(set model.HealthSettings) error {
+	if s == nil || s.svc == nil {
+		return service.ErrNotConnected
+	}
+
 	args := []string{}
 	if set.CPUOvertempCheck {
 		args = append(args, "=cpu-overtemp-check=yes")

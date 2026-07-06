@@ -44,3 +44,7 @@ func main() {
 - `service` wraps the `go-routeros` client and handles transport concerns.
 - `Client` (root package) exposes typed modules (starting with `System`) that return structs instead of raw maps.
 - Options are passed on construction (`garbiter.Connect`/`ConnectTLS`) to configure the transport (e.g., timeouts).
+
+## Errors
+- Operations that need a RouterOS transport return `service.ErrNotConnected` when the client is nil or not connected.
+- Transport and RouterOS command errors are returned unchanged by typed APIs.
