@@ -9,4 +9,5 @@ type Transport interface {
 	Close() error
 	Ping() error
 	Run(cmd string, args ...string) (map[string]string, error)
+	RunList(cmd string, args ...string) ([]map[string]string, error)
 }

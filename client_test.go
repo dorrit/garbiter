@@ -14,12 +14,15 @@ type fakeTransport struct {
 	pingErr    error
 	runErr     error
 	runResult  map[string]string
+	listResult []map[string]string
 
 	connectCalled bool
 	closeCalled   bool
 	pingCalled    bool
 	runCmd        string
 	runArgs       []string
+	listCmd       string
+	listArgs      []string
 }
 
 func (f *fakeTransport) Connect(address, username, password string, tlsConfig *tls.Config) error {
@@ -41,6 +44,12 @@ func (f *fakeTransport) Run(cmd string, args ...string) (map[string]string, erro
 	f.runCmd = cmd
 	f.runArgs = append([]string(nil), args...)
 	return f.runResult, f.runErr
+}
+
+func (f *fakeTransport) RunList(cmd string, args ...string) ([]map[string]string, error) {
+	f.listCmd = cmd
+	f.listArgs = append([]string(nil), args...)
+	return f.listResult, f.runErr
 }
 
 func TestClientWithoutServiceReturnsNotConnected(t *testing.T) {

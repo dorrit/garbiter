@@ -42,8 +42,18 @@ func main() {
 
 ## Design
 - `service` wraps the `go-routeros` client and handles transport concerns.
-- `Client` (root package) exposes typed modules (starting with `System`) that return structs instead of raw maps.
+- `Client` (root package) exposes typed modules that return structs instead of raw maps.
 - Options are passed on construction (`garbiter.Connect`/`ConnectTLS`) to configure the transport (e.g., timeouts).
+
+## Typed Modules
+- `System`: identity, resource, health, health settings.
+- `Interface`: interface print/set/enable/disable, bridge, VLAN.
+- `IP`: address, route, DNS.
+- `DHCP`: DHCP client, DHCP server, leases.
+- `Firewall`: filter rules, NAT rules, address-list.
+- `Queue`: simple queues.
+
+Raw commands remain available through `Client.Run` and list-style commands through the transport `RunList` method.
 
 ## Errors
 - Operations that need a RouterOS transport return `service.ErrNotConnected` when the client is nil or not connected.

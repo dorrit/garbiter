@@ -86,26 +86,64 @@ func (s *RouterOSService) Ping() error {
 }
 
 func (s *RouterOSService) Run(cmd string, args ...string) (map[string]string, error) {
-	client, err := s.ensureClient()
+	rows, done, err := s.run(cmd, args...)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(done) > 0 {
+		return done, nil
+	}
+
+	if len(rows) > 0 {
+		return rows[0], nil
+	}
+
+	return map[string]string{}, nil
+}
+
+func (s *RouterOSService) RunList(cmd string, args ...string) ([]map[string]string, error) {
+	rows, done, err := s.run(cmd, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(rows) > 0 {
+		return rows, nil
+	}
+
+	if len(done) > 0 {
+		return []map[string]string{done}, nil
+	}
+
+	return []map[string]string{}, nil
+}
+
+func (s *RouterOSService) run(cmd string, args ...string) ([]map[string]string, map[string]string, error) {
+	client, err := s.ensureClient()
+	if err != nil {
+		return nil, nil, err
 	}
 
 	sentences := append([]string{cmd}, args...)
 	reply, err := client.Run(sentences...)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
+	rows := make([]map[string]string, 0, len(reply.Re))
+	for _, sentence := range reply.Re {
+		if len(sentence.Map) > 0 {
+			rows = append(rows, sentence.Map)
+		}
+	}
+
+	done := map[string]string(nil)
 	if reply.Done != nil && len(reply.Done.Map) > 0 {
-		return reply.Done.Map, nil
+		done = reply.Done.Map
 	}
 
-	if len(reply.Re) > 0 {
-		return reply.Re[0].Map, nil
-	}
-
-	return map[string]string{}, nil
+	return rows, done, nil
 }
 
 func (s *RouterOSService) ensureClient() (*routeros.Client, error) {
