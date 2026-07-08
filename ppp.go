@@ -35,6 +35,9 @@ func (api *PPPAPI) SetProfile(id string, set model.PPPProfileSet) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
 	}
+	if err := validateID(id); err != nil {
+		return err
+	}
 	_, err := api.svc.Run("/ppp/profile/set", setIDArgs(id, pppProfileSetArgs(set))...)
 	return err
 }
@@ -68,6 +71,9 @@ func (api *PPPAPI) AddSecret(set model.PPPSecretSet) (map[string]string, error) 
 func (api *PPPAPI) SetSecret(id string, set model.PPPSecretSet) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
+	}
+	if err := validateID(id); err != nil {
+		return err
 	}
 	_, err := api.svc.Run("/ppp/secret/set", setIDArgs(id, pppSecretSetArgs(set))...)
 	return err
@@ -107,6 +113,9 @@ func (api *PPPAPI) RemoveActive(id string) error {
 func (api *PPPAPI) runID(cmd, id string) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
+	}
+	if err := validateID(id); err != nil {
+		return err
 	}
 	_, err := api.svc.Run(cmd, "=.id="+id)
 	return err

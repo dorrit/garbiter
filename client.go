@@ -211,6 +211,9 @@ func (c *Client) Run(cmd string, args ...string) (map[string]string, error) {
 	if c == nil || c.service == nil {
 		return nil, service.ErrNotConnected
 	}
+	if cmd == "" {
+		return nil, service.ErrInvalidCommand
+	}
 	return c.service.Run(cmd, args...)
 }
 

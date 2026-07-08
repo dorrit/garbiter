@@ -83,6 +83,9 @@ func (api *FirewallAPI) SetAddressList(id string, set model.AddressListSet) erro
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
 	}
+	if err := validateID(id); err != nil {
+		return err
+	}
 	_, err := api.svc.Run("/ip/firewall/address-list/set", setIDArgs(id, addressListSetArgs(set))...)
 	return err
 }
@@ -117,6 +120,9 @@ func (api *FirewallAPI) setRule(cmd, id string, set model.FirewallRuleSet) error
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
 	}
+	if err := validateID(id); err != nil {
+		return err
+	}
 	_, err := api.svc.Run(cmd, setIDArgs(id, firewallRuleSetArgs(set))...)
 	return err
 }
@@ -124,6 +130,9 @@ func (api *FirewallAPI) setRule(cmd, id string, set model.FirewallRuleSet) error
 func (api *FirewallAPI) runID(cmd, id string) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
+	}
+	if err := validateID(id); err != nil {
+		return err
 	}
 	_, err := api.svc.Run(cmd, "=.id="+id)
 	return err

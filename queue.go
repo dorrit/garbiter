@@ -35,6 +35,9 @@ func (api *QueueAPI) SetSimple(id string, set model.SimpleQueueSet) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
 	}
+	if err := validateID(id); err != nil {
+		return err
+	}
 	_, err := api.svc.Run("/queue/simple/set", setIDArgs(id, simpleQueueSetArgs(set))...)
 	return err
 }
@@ -54,6 +57,9 @@ func (api *QueueAPI) DisableSimple(id string) error {
 func (api *QueueAPI) runID(cmd, id string) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
+	}
+	if err := validateID(id); err != nil {
+		return err
 	}
 	_, err := api.svc.Run(cmd, "=.id="+id)
 	return err

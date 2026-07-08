@@ -35,6 +35,9 @@ func (api *UserAPI) Set(id string, set model.UserSet) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
 	}
+	if err := validateID(id); err != nil {
+		return err
+	}
 	_, err := api.svc.Run("/user/set", setIDArgs(id, userSetArgs(set))...)
 	return err
 }
@@ -54,6 +57,9 @@ func (api *UserAPI) Disable(id string) error {
 func (api *UserAPI) runID(cmd, id string) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
+	}
+	if err := validateID(id); err != nil {
+		return err
 	}
 	_, err := api.svc.Run(cmd, "=.id="+id)
 	return err

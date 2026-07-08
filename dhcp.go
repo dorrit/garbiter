@@ -35,6 +35,9 @@ func (api *DHCPAPI) SetClient(id string, set model.DHCPClientSet) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
 	}
+	if err := validateID(id); err != nil {
+		return err
+	}
 	_, err := api.svc.Run("/ip/dhcp-client/set", setIDArgs(id, dhcpClientSetArgs(set))...)
 	return err
 }
@@ -68,6 +71,9 @@ func (api *DHCPAPI) AddServer(set model.DHCPServerSet) (map[string]string, error
 func (api *DHCPAPI) SetServer(id string, set model.DHCPServerSet) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
+	}
+	if err := validateID(id); err != nil {
+		return err
 	}
 	_, err := api.svc.Run("/ip/dhcp-server/set", setIDArgs(id, dhcpServerSetArgs(set))...)
 	return err
@@ -103,6 +109,9 @@ func (api *DHCPAPI) RemoveLease(id string) error {
 func (api *DHCPAPI) runID(cmd, id string) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
+	}
+	if err := validateID(id); err != nil {
+		return err
 	}
 	_, err := api.svc.Run(cmd, "=.id="+id)
 	return err

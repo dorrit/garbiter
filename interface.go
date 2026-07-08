@@ -28,6 +28,9 @@ func (api *InterfaceAPI) Set(id string, set model.InterfaceSet) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
 	}
+	if err := validateID(id); err != nil {
+		return err
+	}
 	_, err := api.svc.Run("/interface/set", setIDArgs(id, interfaceSetArgs(set))...)
 	return err
 }
@@ -66,6 +69,9 @@ func (api *InterfaceAPI) SetBridge(id string, set model.BridgeSet) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
 	}
+	if err := validateID(id); err != nil {
+		return err
+	}
 	_, err := api.svc.Run("/interface/bridge/set", setIDArgs(id, bridgeSetArgs(set))...)
 	return err
 }
@@ -100,6 +106,9 @@ func (api *InterfaceAPI) SetVLAN(id string, set model.VLANSet) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
 	}
+	if err := validateID(id); err != nil {
+		return err
+	}
 	_, err := api.svc.Run("/interface/vlan/set", setIDArgs(id, vlanSetArgs(set))...)
 	return err
 }
@@ -111,6 +120,9 @@ func (api *InterfaceAPI) RemoveVLAN(id string) error {
 func (api *InterfaceAPI) runID(cmd, id string) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
+	}
+	if err := validateID(id); err != nil {
+		return err
 	}
 	_, err := api.svc.Run(cmd, "=.id="+id)
 	return err

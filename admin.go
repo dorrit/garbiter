@@ -28,6 +28,9 @@ func (api *CertificateAPI) Set(id string, set model.CertificateSet) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
 	}
+	if err := validateID(id); err != nil {
+		return err
+	}
 	args := []string{}
 	args = appendArg(args, "name", set.Name)
 	args = appendBoolArg(args, "trusted", set.Trusted)
@@ -39,6 +42,9 @@ func (api *CertificateAPI) Set(id string, set model.CertificateSet) error {
 func (api *CertificateAPI) Remove(id string) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
+	}
+	if err := validateID(id); err != nil {
+		return err
 	}
 	_, err := api.svc.Run("/certificate/remove", "=.id="+id)
 	return err
@@ -104,6 +110,9 @@ func (api *ScheduleAPI) Set(id string, set model.ScheduleSet) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
 	}
+	if err := validateID(id); err != nil {
+		return err
+	}
 	_, err := api.svc.Run("/system/scheduler/set", setIDArgs(id, scheduleSetArgs(set))...)
 	return err
 }
@@ -111,6 +120,9 @@ func (api *ScheduleAPI) Set(id string, set model.ScheduleSet) error {
 func (api *ScheduleAPI) Remove(id string) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
+	}
+	if err := validateID(id); err != nil {
+		return err
 	}
 	_, err := api.svc.Run("/system/scheduler/remove", "=.id="+id)
 	return err
@@ -146,6 +158,9 @@ func (api *ScriptAPI) Set(id string, set model.ScriptSet) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
 	}
+	if err := validateID(id); err != nil {
+		return err
+	}
 	_, err := api.svc.Run("/system/script/set", setIDArgs(id, scriptSetArgs(set))...)
 	return err
 }
@@ -154,6 +169,9 @@ func (api *ScriptAPI) Remove(id string) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
 	}
+	if err := validateID(id); err != nil {
+		return err
+	}
 	_, err := api.svc.Run("/system/script/remove", "=.id="+id)
 	return err
 }
@@ -161,6 +179,9 @@ func (api *ScriptAPI) Remove(id string) error {
 func (api *ScriptAPI) Run(id string) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
+	}
+	if err := validateID(id); err != nil {
+		return err
 	}
 	_, err := api.svc.Run("/system/script/run", "=.id="+id)
 	return err

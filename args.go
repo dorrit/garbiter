@@ -40,3 +40,10 @@ func boolFromRouterOS(value string) bool {
 func setIDArgs(id string, args []string) []string {
 	return append([]string{"=.id=" + id}, args...)
 }
+
+func validateID(id string) error {
+	if id == "" {
+		return service.ErrInvalidID
+	}
+	return nil
+}

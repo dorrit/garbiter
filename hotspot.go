@@ -35,6 +35,9 @@ func (api *HotspotAPI) SetServer(id string, set model.HotspotServerSet) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
 	}
+	if err := validateID(id); err != nil {
+		return err
+	}
 	_, err := api.svc.Run("/ip/hotspot/set", setIDArgs(id, hotspotServerSetArgs(set))...)
 	return err
 }
@@ -68,6 +71,9 @@ func (api *HotspotAPI) AddUser(set model.HotspotUserSet) (map[string]string, err
 func (api *HotspotAPI) SetUser(id string, set model.HotspotUserSet) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
+	}
+	if err := validateID(id); err != nil {
+		return err
 	}
 	_, err := api.svc.Run("/ip/hotspot/user/set", setIDArgs(id, hotspotUserSetArgs(set))...)
 	return err
@@ -107,6 +113,9 @@ func (api *HotspotAPI) RemoveActive(id string) error {
 func (api *HotspotAPI) runID(cmd, id string) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
+	}
+	if err := validateID(id); err != nil {
+		return err
 	}
 	_, err := api.svc.Run(cmd, "=.id="+id)
 	return err

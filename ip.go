@@ -35,6 +35,9 @@ func (api *IPAPI) SetAddress(id string, set model.IPAddressSet) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
 	}
+	if err := validateID(id); err != nil {
+		return err
+	}
 	_, err := api.svc.Run("/ip/address/set", setIDArgs(id, ipAddressSetArgs(set))...)
 	return err
 }
@@ -68,6 +71,9 @@ func (api *IPAPI) AddRoute(set model.RouteSet) (map[string]string, error) {
 func (api *IPAPI) SetRoute(id string, set model.RouteSet) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
+	}
+	if err := validateID(id); err != nil {
+		return err
 	}
 	_, err := api.svc.Run("/ip/route/set", setIDArgs(id, routeSetArgs(set))...)
 	return err
@@ -116,6 +122,9 @@ func (api *IPAPI) SetService(id string, set model.IPServiceSet) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
 	}
+	if err := validateID(id); err != nil {
+		return err
+	}
 	_, err := api.svc.Run("/ip/service/set", setIDArgs(id, ipServiceSetArgs(set))...)
 	return err
 }
@@ -154,6 +163,9 @@ func (api *IPAPI) SetARP(id string, set model.ARPSet) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
 	}
+	if err := validateID(id); err != nil {
+		return err
+	}
 	_, err := api.svc.Run("/ip/arp/set", setIDArgs(id, arpSetArgs(set))...)
 	return err
 }
@@ -188,6 +200,9 @@ func (api *IPAPI) SetPool(id string, set model.PoolSet) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
 	}
+	if err := validateID(id); err != nil {
+		return err
+	}
 	_, err := api.svc.Run("/ip/pool/set", setIDArgs(id, poolSetArgs(set))...)
 	return err
 }
@@ -199,6 +214,9 @@ func (api *IPAPI) RemovePool(id string) error {
 func (api *IPAPI) runID(cmd, id string) error {
 	if api == nil || api.svc == nil {
 		return service.ErrNotConnected
+	}
+	if err := validateID(id); err != nil {
+		return err
 	}
 	_, err := api.svc.Run(cmd, "=.id="+id)
 	return err
