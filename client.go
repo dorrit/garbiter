@@ -17,6 +17,12 @@ type Client struct {
 	log      *LogAPI
 	user     *UserAPI
 	tool     *ToolAPI
+	ppp      *PPPAPI
+	hotspot  *HotspotAPI
+	cert     *CertificateAPI
+	snmp     *SNMPAPI
+	schedule *ScheduleAPI
+	script   *ScriptAPI
 }
 
 // System provides typed system commands.
@@ -116,6 +122,72 @@ func (c *Client) Tool() *ToolAPI {
 		c.tool = &ToolAPI{svc: c.service}
 	}
 	return c.tool
+}
+
+// PPP provides typed PPP commands.
+func (c *Client) PPP() *PPPAPI {
+	if c == nil {
+		return &PPPAPI{}
+	}
+	if c.ppp == nil {
+		c.ppp = &PPPAPI{svc: c.service}
+	}
+	return c.ppp
+}
+
+// Hotspot provides typed hotspot commands.
+func (c *Client) Hotspot() *HotspotAPI {
+	if c == nil {
+		return &HotspotAPI{}
+	}
+	if c.hotspot == nil {
+		c.hotspot = &HotspotAPI{svc: c.service}
+	}
+	return c.hotspot
+}
+
+// Certificate provides typed certificate commands.
+func (c *Client) Certificate() *CertificateAPI {
+	if c == nil {
+		return &CertificateAPI{}
+	}
+	if c.cert == nil {
+		c.cert = &CertificateAPI{svc: c.service}
+	}
+	return c.cert
+}
+
+// SNMP provides typed SNMP commands.
+func (c *Client) SNMP() *SNMPAPI {
+	if c == nil {
+		return &SNMPAPI{}
+	}
+	if c.snmp == nil {
+		c.snmp = &SNMPAPI{svc: c.service}
+	}
+	return c.snmp
+}
+
+// Schedule provides typed scheduler commands.
+func (c *Client) Schedule() *ScheduleAPI {
+	if c == nil {
+		return &ScheduleAPI{}
+	}
+	if c.schedule == nil {
+		c.schedule = &ScheduleAPI{svc: c.service}
+	}
+	return c.schedule
+}
+
+// Script provides typed script commands.
+func (c *Client) Script() *ScriptAPI {
+	if c == nil {
+		return &ScriptAPI{}
+	}
+	if c.script == nil {
+		c.script = &ScriptAPI{svc: c.service}
+	}
+	return c.script
 }
 
 // Close closes the underlying RouterOS connection.
