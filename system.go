@@ -163,3 +163,111 @@ func (s *SystemAPI) SetHealth(set model.HealthSettings) error {
 	_, err := s.svc.Run("/system/health/settings/set", args...)
 	return err
 }
+
+func (s *SystemAPI) PrintClock() (*model.Clock, error) {
+	if s == nil || s.svc == nil {
+		return nil, service.ErrNotConnected
+	}
+
+	res, err := s.svc.Run("/system/clock/print")
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Clock{
+		Time:         res["time"],
+		Date:         res["date"],
+		TimeZoneName: res["time-zone-name"],
+		GMTOffset:    res["gmt-offset"],
+		DSTActive:    boolFromRouterOS(res["dst-active"]),
+		TimeZoneAuto: boolFromRouterOS(res["time-zone-autodetect"]),
+		Raw:          res,
+	}, nil
+}
+
+func (s *SystemAPI) SetClock(set model.ClockSet) error {
+	if s == nil || s.svc == nil {
+		return service.ErrNotConnected
+	}
+
+	args := []string{}
+	args = appendArg(args, "time", set.Time)
+	args = appendArg(args, "date", set.Date)
+	args = appendArg(args, "time-zone-name", set.TimeZoneName)
+	args = appendBoolArg(args, "time-zone-autodetect", set.TimeZoneAuto)
+	args = appendExtraArgs(args, set.Extra)
+	_, err := s.svc.Run("/system/clock/set", args...)
+	return err
+}
+
+func (s *SystemAPI) Packages() ([]model.Package, error) {
+	if s == nil || s.svc == nil {
+		return nil, service.ErrNotConnected
+	}
+
+	rows, err := s.svc.RunList("/system/package/print")
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]model.Package, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, model.Package{
+			ID:        row[".id"],
+			Name:      row["name"],
+			Version:   row["version"],
+			BuildTime: row["build-time"],
+			Scheduled: row["scheduled"],
+			Disabled:  boolFromRouterOS(row["disabled"]),
+			Raw:       row,
+		})
+	}
+	return items, nil
+}
+
+func (s *SystemAPI) PrintRouterboard() (*model.Routerboard, error) {
+	if s == nil || s.svc == nil {
+		return nil, service.ErrNotConnected
+	}
+
+	res, err := s.svc.Run("/system/routerboard/print")
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Routerboard{
+		Routerboard:           boolFromRouterOS(res["routerboard"]),
+		Model:                 res["model"],
+		SerialNumber:          res["serial-number"],
+		FirmwareType:          res["firmware-type"],
+		FactoryFirmware:       res["factory-firmware"],
+		CurrentFirmware:       res["current-firmware"],
+		UpgradeFirmware:       res["upgrade-firmware"],
+		FirmwareUpgradeNeeded: boolFromRouterOS(res["firmware-upgrade-needed"]),
+		Raw:                   res,
+	}, nil
+}
+
+func (s *SystemAPI) SetRouterboardSettings(set model.RouterboardSettings) error {
+	if s == nil || s.svc == nil {
+		return service.ErrNotConnected
+	}
+
+	args := []string{}
+	args = appendArg(args, "boot-device", set.BootDevice)
+	args = appendArg(args, "cpu-frequency", set.CPUFrequency)
+	args = appendArg(args, "boot-protocol", set.BootProtocol)
+	args = appendBoolArg(args, "protected-routerboot", set.ProtectedRouterboot)
+	args = appendExtraArgs(args, set.Extra)
+	_, err := s.svc.Run("/system/routerboard/settings/set", args...)
+	return err
+}
+
+func (s *SystemAPI) UpgradeRouterboard() error {
+	if s == nil || s.svc == nil {
+		return service.ErrNotConnected
+	}
+
+	_, err := s.svc.Run("/system/routerboard/upgrade")
+	return err
+}

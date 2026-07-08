@@ -14,6 +14,9 @@ type Client struct {
 	dhcp     *DHCPAPI
 	firewall *FirewallAPI
 	queue    *QueueAPI
+	log      *LogAPI
+	user     *UserAPI
+	tool     *ToolAPI
 }
 
 // System provides typed system commands.
@@ -80,6 +83,39 @@ func (c *Client) Queue() *QueueAPI {
 		c.queue = &QueueAPI{svc: c.service}
 	}
 	return c.queue
+}
+
+// Log provides typed log commands.
+func (c *Client) Log() *LogAPI {
+	if c == nil {
+		return &LogAPI{}
+	}
+	if c.log == nil {
+		c.log = &LogAPI{svc: c.service}
+	}
+	return c.log
+}
+
+// User provides typed user commands.
+func (c *Client) User() *UserAPI {
+	if c == nil {
+		return &UserAPI{}
+	}
+	if c.user == nil {
+		c.user = &UserAPI{svc: c.service}
+	}
+	return c.user
+}
+
+// Tool provides typed tool commands.
+func (c *Client) Tool() *ToolAPI {
+	if c == nil {
+		return &ToolAPI{}
+	}
+	if c.tool == nil {
+		c.tool = &ToolAPI{svc: c.service}
+	}
+	return c.tool
 }
 
 // Close closes the underlying RouterOS connection.

@@ -73,3 +73,51 @@ type HealthSettings struct {
 	// Future-proof
 	Extra map[string]string
 }
+
+type Clock struct {
+	Time         string
+	Date         string
+	TimeZoneName string
+	GMTOffset    string
+	DSTActive    bool
+	TimeZoneAuto bool
+	Raw          map[string]string
+}
+
+type ClockSet struct {
+	Time         string
+	Date         string
+	TimeZoneName string
+	TimeZoneAuto *bool
+	Extra        map[string]string
+}
+
+type Package struct {
+	ID        string
+	Name      string
+	Version   string
+	BuildTime string
+	Scheduled string
+	Disabled  bool
+	Raw       map[string]string
+}
+
+type Routerboard struct {
+	Routerboard           bool
+	Model                 string
+	SerialNumber          string
+	FirmwareType          string
+	FactoryFirmware       string
+	CurrentFirmware       string
+	UpgradeFirmware       string
+	FirmwareUpgradeNeeded bool
+	Raw                   map[string]string
+}
+
+type RouterboardSettings struct {
+	BootDevice          string
+	CPUFrequency        string
+	BootProtocol        string
+	ProtectedRouterboot *bool
+	Extra               map[string]string
+}
