@@ -81,6 +81,8 @@ for _, iface := range interfaces {
 Add an IP address:
 
 ```go
+import "github.com/dorrit/garbiter/model"
+
 _, err := client.IP().AddAddress(model.IPAddressSet{
 	Address:   "192.168.88.1/24",
 	Interface: "bridge",
