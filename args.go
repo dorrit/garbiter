@@ -108,6 +108,10 @@ func setIDArgs(id string, args []string) []string {
 	return append([]string{"=.id=" + id}, args...)
 }
 
+func proplist(fields ...string) string {
+	return "=.proplist=" + strings.Join(fields, ",")
+}
+
 func validateID(id string) error {
 	if id == "" {
 		return service.ErrInvalidID

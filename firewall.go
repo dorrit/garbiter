@@ -61,7 +61,7 @@ func (api *FirewallAPI) AddressList() ([]model.AddressListEntry, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/ip/firewall/address-list/print")
+	rows, err := api.svc.RunList("/ip/firewall/address-list/print", proplist(".id", "list", "address", "timeout", "dynamic", "disabled", "comment"))
 	if err != nil {
 		return nil, err
 	}
@@ -75,6 +75,12 @@ func (api *FirewallAPI) AddressList() ([]model.AddressListEntry, error) {
 func (api *FirewallAPI) AddAddressList(set model.AddressListSet) (map[string]string, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
+	}
+	if err := requireField("list", set.List); err != nil {
+		return nil, err
+	}
+	if err := requireField("address", set.Address); err != nil {
+		return nil, err
 	}
 	return api.svc.Run("/ip/firewall/address-list/add", addressListSetArgs(set)...)
 }
@@ -98,7 +104,7 @@ func (api *FirewallAPI) rules(cmd string) ([]model.FirewallRule, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList(cmd)
+	rows, err := api.svc.RunList(cmd, proplist(".id", "chain", "action", "protocol", "src-address", "dst-address", "src-port", "dst-port", "in-interface", "out-interface", "disabled", "dynamic", "comment"))
 	if err != nil {
 		return nil, err
 	}
@@ -112,6 +118,9 @@ func (api *FirewallAPI) rules(cmd string) ([]model.FirewallRule, error) {
 func (api *FirewallAPI) addRule(cmd string, set model.FirewallRuleSet) (map[string]string, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
+	}
+	if err := requireField("chain", set.Chain); err != nil {
+		return nil, err
 	}
 	return api.svc.Run(cmd, firewallRuleSetArgs(set)...)
 }

@@ -13,7 +13,7 @@ func (api *CertificateAPI) Print() ([]model.Certificate, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/certificate/print")
+	rows, err := api.svc.RunList("/certificate/print", proplist(".id", "name", "common-name", "fingerprint", "invalid-before", "invalid-after", "trusted", "private-key"))
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (api *SNMPAPI) Print() (*model.SNMP, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	row, err := api.svc.Run("/snmp/print")
+	row, err := api.svc.Run("/snmp/print", proplist("enabled", "contact", "location", "trap-community", "trap-version"))
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (api *ScheduleAPI) Print() ([]model.Schedule, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/system/scheduler/print")
+	rows, err := api.svc.RunList("/system/scheduler/print", proplist(".id", "name", "start-date", "start-time", "interval", "on-event", "disabled", "comment"))
 	if err != nil {
 		return nil, err
 	}
@@ -102,6 +102,9 @@ func (api *ScheduleAPI) Print() ([]model.Schedule, error) {
 func (api *ScheduleAPI) Add(set model.ScheduleSet) (map[string]string, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
+	}
+	if err := requireField("name", set.Name); err != nil {
+		return nil, err
 	}
 	return api.svc.Run("/system/scheduler/add", scheduleSetArgs(set)...)
 }
@@ -136,7 +139,7 @@ func (api *ScriptAPI) Print() ([]model.Script, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/system/script/print")
+	rows, err := api.svc.RunList("/system/script/print", proplist(".id", "name", "owner", "policy", "run-count", "last-started", "source", "invalid"))
 	if err != nil {
 		return nil, err
 	}
@@ -150,6 +153,9 @@ func (api *ScriptAPI) Print() ([]model.Script, error) {
 func (api *ScriptAPI) Add(set model.ScriptSet) (map[string]string, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
+	}
+	if err := requireField("name", set.Name); err != nil {
+		return nil, err
 	}
 	return api.svc.Run("/system/script/add", scriptSetArgs(set)...)
 }

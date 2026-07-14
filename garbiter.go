@@ -5,11 +5,15 @@ import (
 	"crypto/tls"
 	"time"
 
+	"github.com/dorrit/garbiter/model"
 	"github.com/dorrit/garbiter/service"
 )
 
 // Option configures the underlying transport.
 type Option = service.Option
+
+// Transport is the command and connection contract used by Client.
+type Transport = model.Transport
 
 // WithTimeout configures the dial timeout. A non-positive timeout disables the
 // timeout-specific dial path and uses the dependency default behavior.
@@ -26,6 +30,15 @@ func WithCommandTimeout(timeout time.Duration) Option {
 // New creates a client with the configured transport options without connecting.
 func New(opts ...service.Option) *Client {
 	return &Client{service: service.NewRouterOSService(opts...)}
+}
+
+// NewClient creates a client over an existing transport. It is useful for
+// custom transports, tests, and dependency injection.
+func NewClient(transport Transport) (*Client, error) {
+	if transport == nil {
+		return nil, &ValidationError{Field: "transport", Message: "must not be nil"}
+	}
+	return &Client{service: transport}, nil
 }
 
 // Connect dials a RouterOS API endpoint and returns a typed client.

@@ -18,7 +18,7 @@ func (s *SystemAPI) PrintIdentity() (*model.Identity, error) {
 		return nil, service.ErrNotConnected
 	}
 
-	res, err := s.svc.Run("/system/identity/print")
+	res, err := s.svc.Run("/system/identity/print", proplist("name"))
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (s *SystemAPI) PrintResource() (*model.Resource, error) {
 		return nil, service.ErrNotConnected
 	}
 
-	res, err := s.svc.Run("/system/resource/print")
+	res, err := s.svc.Run("/system/resource/print", proplist("uptime", "version", "build-time", "factory-software", "free-memory", "total-memory", "cpu", "cpu-count", "cpu-frequency", "cpu-load", "free-hdd-space", "total-hdd-space", "write-sect-since-reboot", "write-sect-total", "bad-blocks", "architecture-name", "board-name", "platform"))
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (s *SystemAPI) PrintHealth() (*model.Health, error) {
 		return nil, service.ErrNotConnected
 	}
 
-	rows, err := s.svc.RunList("/system/health/print")
+	rows, err := s.svc.RunList("/system/health/print", proplist("name", "value", "type", "voltage", "temperature", "power-consumption", "cpu-temperature", "fan1-speed", "fan2-speed", "fan3-speed", "fan4-speed", "board-temp1", "board-temp2", "board-temperature1", "board-temperature2", "psu1-voltage", "psu2-voltage", "psu1-current", "psu2-current"))
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +234,7 @@ func (s *SystemAPI) PrintClock() (*model.Clock, error) {
 		return nil, service.ErrNotConnected
 	}
 
-	res, err := s.svc.Run("/system/clock/print")
+	res, err := s.svc.Run("/system/clock/print", proplist("time", "date", "time-zone-name", "gmt-offset", "dst-active", "time-zone-autodetect"))
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +270,7 @@ func (s *SystemAPI) Packages() ([]model.Package, error) {
 		return nil, service.ErrNotConnected
 	}
 
-	rows, err := s.svc.RunList("/system/package/print")
+	rows, err := s.svc.RunList("/system/package/print", proplist(".id", "name", "version", "build-time", "scheduled", "disabled"))
 	if err != nil {
 		return nil, err
 	}
@@ -295,7 +295,7 @@ func (s *SystemAPI) PrintRouterboard() (*model.Routerboard, error) {
 		return nil, service.ErrNotConnected
 	}
 
-	res, err := s.svc.Run("/system/routerboard/print")
+	res, err := s.svc.Run("/system/routerboard/print", proplist("routerboard", "model", "serial-number", "firmware-type", "factory-firmware", "current-firmware", "upgrade-firmware"))
 	if err != nil {
 		return nil, err
 	}

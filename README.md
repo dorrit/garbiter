@@ -120,13 +120,16 @@ res, err := client.Run("/system/identity/print")
 
 ## Versioning
 - The library is currently suitable for `v0.x` use while typed APIs are still being expanded.
-- Prefer pinning a tagged version once releases are published.
+- The `v0.1.0` tag predates the expanded typed API; pin a newer tag once the next release is published.
 - Raw RouterOS behavior and unsupported commands can still be accessed with `Client.Run`.
 
 ## Errors
-- Operations that need a RouterOS transport return `service.ErrNotConnected` when the client is nil or not connected.
-- Operations that require a RouterOS item id return `service.ErrInvalidID` when the id is empty.
+- Operations that need a RouterOS transport return `garbiter.ErrNotConnected` when the client is nil or not connected.
+- Operations that require a RouterOS item id return `garbiter.ErrInvalidID` when the id is empty.
+- Invalid request fields return `*garbiter.ValidationError`.
 - Transport and RouterOS command errors are returned unchanged by typed APIs.
+
+Custom transports and external test doubles can be injected with `garbiter.NewClient(transport)`.
 
 ## Update Semantics
 

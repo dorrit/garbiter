@@ -44,3 +44,41 @@ func TestIDCommandsRejectEmptyID(t *testing.T) {
 		})
 	}
 }
+
+func TestNewClientRejectsNilTransport(t *testing.T) {
+	client, err := NewClient(nil)
+	if client != nil {
+		t.Fatal("NewClient result = non-nil, want nil")
+	}
+	var validationErr *ValidationError
+	if !errors.As(err, &validationErr) || validationErr.Field != "transport" {
+		t.Fatalf("NewClient error = %v, want transport validation error", err)
+	}
+}
+
+func TestAddOperationsValidateRequiredFields(t *testing.T) {
+	c := &Client{service: &fakeTransport{}}
+
+	tests := []struct {
+		name string
+		call func() error
+	}{
+		{name: "bridge", call: func() error { _, err := c.Interface().AddBridge(model.BridgeSet{}); return err }},
+		{name: "vlan", call: func() error { _, err := c.Interface().AddVLAN(model.VLANSet{Name: "vlan"}); return err }},
+		{name: "address", call: func() error { _, err := c.IP().AddAddress(model.IPAddressSet{}); return err }},
+		{name: "dhcp-client", call: func() error { _, err := c.DHCP().AddClient(model.DHCPClientSet{}); return err }},
+		{name: "firewall", call: func() error { _, err := c.Firewall().AddFilterRule(model.FirewallRuleSet{}); return err }},
+		{name: "queue", call: func() error { _, err := c.Queue().AddSimple(model.SimpleQueueSet{}); return err }},
+		{name: "user", call: func() error { _, err := c.User().Add(model.UserSet{}); return err }},
+		{name: "ping", call: func() error { _, err := c.Tool().Ping(model.PingRequest{}); return err }},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var validationErr *ValidationError
+			if err := tt.call(); !errors.As(err, &validationErr) {
+				t.Fatalf("error = %v, want validation error", err)
+			}
+		})
+	}
+}

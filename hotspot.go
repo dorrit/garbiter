@@ -13,7 +13,7 @@ func (api *HotspotAPI) Servers() ([]model.HotspotServer, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/ip/hotspot/print")
+	rows, err := api.svc.RunList("/ip/hotspot/print", proplist(".id", "name", "interface", "address-pool", "profile", "idle-timeout", "disabled"))
 	if err != nil {
 		return nil, err
 	}
@@ -27,6 +27,12 @@ func (api *HotspotAPI) Servers() ([]model.HotspotServer, error) {
 func (api *HotspotAPI) AddServer(set model.HotspotServerSet) (map[string]string, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
+	}
+	if err := requireField("name", set.Name); err != nil {
+		return nil, err
+	}
+	if err := requireField("interface", set.Interface); err != nil {
+		return nil, err
 	}
 	return api.svc.Run("/ip/hotspot/add", hotspotServerSetArgs(set)...)
 }
@@ -50,7 +56,7 @@ func (api *HotspotAPI) Users() ([]model.HotspotUser, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/ip/hotspot/user/print")
+	rows, err := api.svc.RunList("/ip/hotspot/user/print", proplist(".id", "name", "profile", "server", "address", "disabled", "comment"))
 	if err != nil {
 		return nil, err
 	}
@@ -64,6 +70,9 @@ func (api *HotspotAPI) Users() ([]model.HotspotUser, error) {
 func (api *HotspotAPI) AddUser(set model.HotspotUserSet) (map[string]string, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
+	}
+	if err := requireField("name", set.Name); err != nil {
+		return nil, err
 	}
 	return api.svc.Run("/ip/hotspot/user/add", hotspotUserSetArgs(set)...)
 }
@@ -95,7 +104,7 @@ func (api *HotspotAPI) Active() ([]model.HotspotActive, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/ip/hotspot/active/print")
+	rows, err := api.svc.RunList("/ip/hotspot/active/print", proplist(".id", "user", "address", "mac-address", "uptime", "server"))
 	if err != nil {
 		return nil, err
 	}

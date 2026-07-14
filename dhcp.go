@@ -13,7 +13,7 @@ func (api *DHCPAPI) Clients() ([]model.DHCPClient, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/ip/dhcp-client/print")
+	rows, err := api.svc.RunList("/ip/dhcp-client/print", proplist(".id", "interface", "address", "gateway", "status", "disabled", "comment"))
 	if err != nil {
 		return nil, err
 	}
@@ -27,6 +27,9 @@ func (api *DHCPAPI) Clients() ([]model.DHCPClient, error) {
 func (api *DHCPAPI) AddClient(set model.DHCPClientSet) (map[string]string, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
+	}
+	if err := requireField("interface", set.Interface); err != nil {
+		return nil, err
 	}
 	return api.svc.Run("/ip/dhcp-client/add", dhcpClientSetArgs(set)...)
 }
@@ -50,7 +53,7 @@ func (api *DHCPAPI) Servers() ([]model.DHCPServer, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/ip/dhcp-server/print")
+	rows, err := api.svc.RunList("/ip/dhcp-server/print", proplist(".id", "name", "interface", "address-pool", "lease-time", "disabled", "comment"))
 	if err != nil {
 		return nil, err
 	}
@@ -64,6 +67,12 @@ func (api *DHCPAPI) Servers() ([]model.DHCPServer, error) {
 func (api *DHCPAPI) AddServer(set model.DHCPServerSet) (map[string]string, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
+	}
+	if err := requireField("name", set.Name); err != nil {
+		return nil, err
+	}
+	if err := requireField("interface", set.Interface); err != nil {
+		return nil, err
 	}
 	return api.svc.Run("/ip/dhcp-server/add", dhcpServerSetArgs(set)...)
 }
@@ -87,7 +96,7 @@ func (api *DHCPAPI) Leases() ([]model.DHCPLease, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/ip/dhcp-server/lease/print")
+	rows, err := api.svc.RunList("/ip/dhcp-server/lease/print", proplist(".id", "address", "mac-address", "host-name", "server", "status", "dynamic", "disabled", "comment"))
 	if err != nil {
 		return nil, err
 	}

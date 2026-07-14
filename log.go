@@ -13,7 +13,7 @@ func (api *LogAPI) Print() ([]model.LogEntry, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/log/print")
+	rows, err := api.svc.RunList("/log/print", proplist(".id", "time", "topics", "message"))
 	if err != nil {
 		return nil, err
 	}

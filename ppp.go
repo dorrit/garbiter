@@ -13,7 +13,7 @@ func (api *PPPAPI) Profiles() ([]model.PPPProfile, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/ppp/profile/print")
+	rows, err := api.svc.RunList("/ppp/profile/print", proplist(".id", "name", "local-address", "remote-address", "dns-server", "only-one", "comment"))
 	if err != nil {
 		return nil, err
 	}
@@ -27,6 +27,9 @@ func (api *PPPAPI) Profiles() ([]model.PPPProfile, error) {
 func (api *PPPAPI) AddProfile(set model.PPPProfileSet) (map[string]string, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
+	}
+	if err := requireField("name", set.Name); err != nil {
+		return nil, err
 	}
 	return api.svc.Run("/ppp/profile/add", pppProfileSetArgs(set)...)
 }
@@ -50,7 +53,7 @@ func (api *PPPAPI) Secrets() ([]model.PPPSecret, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/ppp/secret/print")
+	rows, err := api.svc.RunList("/ppp/secret/print", proplist(".id", "name", "service", "profile", "remote-address", "disabled", "comment"))
 	if err != nil {
 		return nil, err
 	}
@@ -64,6 +67,9 @@ func (api *PPPAPI) Secrets() ([]model.PPPSecret, error) {
 func (api *PPPAPI) AddSecret(set model.PPPSecretSet) (map[string]string, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
+	}
+	if err := requireField("name", set.Name); err != nil {
+		return nil, err
 	}
 	return api.svc.Run("/ppp/secret/add", pppSecretSetArgs(set)...)
 }
@@ -95,7 +101,7 @@ func (api *PPPAPI) Active() ([]model.PPPActive, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/ppp/active/print")
+	rows, err := api.svc.RunList("/ppp/active/print", proplist(".id", "name", "service", "caller-id", "address", "uptime", "encoding"))
 	if err != nil {
 		return nil, err
 	}

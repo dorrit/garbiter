@@ -13,7 +13,7 @@ func (api *IPAPI) Addresses() ([]model.IPAddress, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/ip/address/print")
+	rows, err := api.svc.RunList("/ip/address/print", proplist(".id", "address", "network", "interface", "disabled", "comment"))
 	if err != nil {
 		return nil, err
 	}
@@ -27,6 +27,12 @@ func (api *IPAPI) Addresses() ([]model.IPAddress, error) {
 func (api *IPAPI) AddAddress(set model.IPAddressSet) (map[string]string, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
+	}
+	if err := requireField("address", set.Address); err != nil {
+		return nil, err
+	}
+	if err := requireField("interface", set.Interface); err != nil {
+		return nil, err
 	}
 	return api.svc.Run("/ip/address/add", ipAddressSetArgs(set)...)
 }
@@ -50,7 +56,7 @@ func (api *IPAPI) Routes() ([]model.Route, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/ip/route/print")
+	rows, err := api.svc.RunList("/ip/route/print", proplist(".id", "dst-address", "gateway", "distance", "scope", "target-scope", "active", "disabled", "comment"))
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +93,7 @@ func (api *IPAPI) PrintDNS() (*model.DNS, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	row, err := api.svc.Run("/ip/dns/print")
+	row, err := api.svc.Run("/ip/dns/print", proplist("servers", "dynamic-servers", "allow-remote-requests", "cache-size"))
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +113,7 @@ func (api *IPAPI) Services() ([]model.IPService, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/ip/service/print")
+	rows, err := api.svc.RunList("/ip/service/print", proplist(".id", "name", "port", "address", "certificate", "tls-version", "disabled", "invalid"))
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +147,7 @@ func (api *IPAPI) ARP() ([]model.ARPEntry, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/ip/arp/print")
+	rows, err := api.svc.RunList("/ip/arp/print", proplist(".id", "address", "mac-address", "interface", "complete", "dynamic", "disabled", "comment"))
 	if err != nil {
 		return nil, err
 	}
@@ -155,6 +161,15 @@ func (api *IPAPI) ARP() ([]model.ARPEntry, error) {
 func (api *IPAPI) AddARP(set model.ARPSet) (map[string]string, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
+	}
+	if err := requireField("address", set.Address); err != nil {
+		return nil, err
+	}
+	if err := requireField("mac-address", set.MACAddress); err != nil {
+		return nil, err
+	}
+	if err := requireField("interface", set.Interface); err != nil {
+		return nil, err
 	}
 	return api.svc.Run("/ip/arp/add", arpSetArgs(set)...)
 }
@@ -178,7 +193,7 @@ func (api *IPAPI) Pools() ([]model.Pool, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/ip/pool/print")
+	rows, err := api.svc.RunList("/ip/pool/print", proplist(".id", "name", "ranges", "next-pool", "comment"))
 	if err != nil {
 		return nil, err
 	}
@@ -192,6 +207,12 @@ func (api *IPAPI) Pools() ([]model.Pool, error) {
 func (api *IPAPI) AddPool(set model.PoolSet) (map[string]string, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
+	}
+	if err := requireField("name", set.Name); err != nil {
+		return nil, err
+	}
+	if err := requireField("ranges", set.Ranges); err != nil {
+		return nil, err
 	}
 	return api.svc.Run("/ip/pool/add", poolSetArgs(set)...)
 }

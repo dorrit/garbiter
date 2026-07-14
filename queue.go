@@ -13,7 +13,7 @@ func (api *QueueAPI) Simple() ([]model.SimpleQueue, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/queue/simple/print")
+	rows, err := api.svc.RunList("/queue/simple/print", proplist(".id", "name", "target", "max-limit", "limit-at", "priority", "disabled", "dynamic", "comment"))
 	if err != nil {
 		return nil, err
 	}
@@ -27,6 +27,12 @@ func (api *QueueAPI) Simple() ([]model.SimpleQueue, error) {
 func (api *QueueAPI) AddSimple(set model.SimpleQueueSet) (map[string]string, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
+	}
+	if err := requireField("name", set.Name); err != nil {
+		return nil, err
+	}
+	if err := requireField("target", set.Target); err != nil {
+		return nil, err
 	}
 	return api.svc.Run("/queue/simple/add", simpleQueueSetArgs(set)...)
 }

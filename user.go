@@ -13,7 +13,7 @@ func (api *UserAPI) Print() ([]model.User, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/user/print")
+	rows, err := api.svc.RunList("/user/print", proplist(".id", "name", "group", "address", "last-logged-in", "disabled", "comment"))
 	if err != nil {
 		return nil, err
 	}
@@ -27,6 +27,9 @@ func (api *UserAPI) Print() ([]model.User, error) {
 func (api *UserAPI) Add(set model.UserSet) (map[string]string, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
+	}
+	if err := requireField("name", set.Name); err != nil {
+		return nil, err
 	}
 	return api.svc.Run("/user/add", userSetArgs(set)...)
 }

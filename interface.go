@@ -1,6 +1,8 @@
 package garbiter
 
 import (
+	"strconv"
+
 	"github.com/dorrit/garbiter/model"
 	"github.com/dorrit/garbiter/service"
 )
@@ -13,7 +15,7 @@ func (api *InterfaceAPI) Print() ([]model.Interface, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/interface/print")
+	rows, err := api.svc.RunList("/interface/print", proplist(".id", "name", "type", "actual-mtu", "l2mtu", "mac-address", "running", "disabled", "comment"))
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +49,7 @@ func (api *InterfaceAPI) Bridges() ([]model.Bridge, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/interface/bridge/print")
+	rows, err := api.svc.RunList("/interface/bridge/print", proplist(".id", "name", "protocol-mode", "disabled", "comment"))
 	if err != nil {
 		return nil, err
 	}
@@ -61,6 +63,9 @@ func (api *InterfaceAPI) Bridges() ([]model.Bridge, error) {
 func (api *InterfaceAPI) AddBridge(set model.BridgeSet) (map[string]string, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
+	}
+	if err := requireField("name", set.Name); err != nil {
+		return nil, err
 	}
 	return api.svc.Run("/interface/bridge/add", bridgeSetArgs(set)...)
 }
@@ -84,7 +89,7 @@ func (api *InterfaceAPI) VLANs() ([]model.VLAN, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
 	}
-	rows, err := api.svc.RunList("/interface/vlan/print")
+	rows, err := api.svc.RunList("/interface/vlan/print", proplist(".id", "name", "interface", "vlan-id", "disabled", "comment"))
 	if err != nil {
 		return nil, err
 	}
@@ -98,6 +103,9 @@ func (api *InterfaceAPI) VLANs() ([]model.VLAN, error) {
 func (api *InterfaceAPI) AddVLAN(set model.VLANSet) (map[string]string, error) {
 	if api == nil || api.svc == nil {
 		return nil, service.ErrNotConnected
+	}
+	if err := validateVLANSet(set); err != nil {
+		return nil, err
 	}
 	return api.svc.Run("/interface/vlan/add", vlanSetArgs(set)...)
 }
@@ -164,4 +172,21 @@ func vlanSetArgs(set model.VLANSet) []string {
 	args = appendArg(args, "comment", set.Comment)
 	args = appendBoolArg(args, "disabled", set.Disabled)
 	return appendExtraArgs(args, set.Extra)
+}
+
+func validateVLANSet(set model.VLANSet) error {
+	if err := requireField("name", set.Name); err != nil {
+		return err
+	}
+	if err := requireField("interface", set.Interface); err != nil {
+		return err
+	}
+	if err := requireField("vlan-id", set.VLANID); err != nil {
+		return err
+	}
+	vlanID, err := strconv.Atoi(set.VLANID)
+	if err != nil || vlanID < 1 || vlanID > 4094 {
+		return &ValidationError{Field: "vlan-id", Message: "must be an integer from 1 to 4094"}
+	}
+	return nil
 }
