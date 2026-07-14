@@ -139,12 +139,12 @@ func (s *RouterOSService) RunContext(ctx context.Context, cmd string, args ...st
 		return nil, err
 	}
 
-	if len(done) > 0 {
-		return done, nil
-	}
-
 	if len(rows) > 0 {
 		return rows[0], nil
+	}
+
+	if len(done) > 0 {
+		return done, nil
 	}
 
 	return map[string]string{}, nil
@@ -157,17 +157,13 @@ func (s *RouterOSService) RunList(cmd string, args ...string) ([]map[string]stri
 }
 
 func (s *RouterOSService) RunListContext(ctx context.Context, cmd string, args ...string) ([]map[string]string, error) {
-	rows, done, err := s.runContext(ctx, cmd, args...)
+	rows, _, err := s.runContext(ctx, cmd, args...)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(rows) > 0 {
 		return rows, nil
-	}
-
-	if len(done) > 0 {
-		return []map[string]string{done}, nil
 	}
 
 	return []map[string]string{}, nil

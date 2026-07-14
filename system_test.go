@@ -86,7 +86,7 @@ func TestSystemPrintResource(t *testing.T) {
 }
 
 func TestSystemPrintHealth(t *testing.T) {
-	transport := &fakeTransport{runResult: map[string]string{
+	transport := &fakeTransport{listResult: []map[string]string{{
 		"voltage":           "24.2",
 		"temperature":       "44.5",
 		"power-consumption": "15.7",
@@ -101,7 +101,7 @@ func TestSystemPrintHealth(t *testing.T) {
 		"psu2-voltage":      "24.1",
 		"psu1-current":      "0.7",
 		"psu2-current":      "0.8",
-	}}
+	}}}
 	system := (&Client{service: transport}).System()
 
 	health, err := system.PrintHealth()
@@ -117,8 +117,37 @@ func TestSystemPrintHealth(t *testing.T) {
 	if health.PSU1Current != 0.7 || health.PSU2Current != 0.8 {
 		t.Fatalf("Health PSU current = %v/%v", health.PSU1Current, health.PSU2Current)
 	}
-	if transport.runCmd != "/system/health/print" {
-		t.Fatalf("Run command = %q", transport.runCmd)
+	if transport.listCmd != "/system/health/print" {
+		t.Fatalf("RunList command = %q", transport.listCmd)
+	}
+}
+
+func TestSystemPrintHealthSensorRows(t *testing.T) {
+	transport := &fakeTransport{listResult: []map[string]string{
+		{"name": "temperature", "value": "44.5", "type": "C"},
+		{"name": "board-temperature1", "value": "42.1", "type": "C"},
+		{"name": "fan1-speed", "value": "1200", "type": "RPM"},
+	}}
+	system := (&Client{service: transport}).System()
+
+	health, err := system.PrintHealth()
+	if err != nil {
+		t.Fatalf("PrintHealth error = %v", err)
+	}
+	if health.Temperature != 44.5 || health.BoardTemp1 != 42.1 || health.Fan1Speed != 1200 {
+		t.Fatalf("Health = %#v", health)
+	}
+	if len(health.Sensors) != 3 || health.Sensors[0].Type != "C" {
+		t.Fatalf("Sensors = %#v", health.Sensors)
+	}
+}
+
+func TestSystemPrintHealthRejectsMalformedSensor(t *testing.T) {
+	transport := &fakeTransport{listResult: []map[string]string{{"name": "temperature", "value": "hot"}}}
+	system := (&Client{service: transport}).System()
+
+	if _, err := system.PrintHealth(); err == nil {
+		t.Fatal("PrintHealth error = nil, want parse error")
 	}
 }
 
@@ -127,13 +156,13 @@ func TestSystemSetHealth(t *testing.T) {
 	system := (&Client{service: transport}).System()
 
 	err := system.SetHealth(model.HealthSettings{
-		CPUOvertempCheck:        true,
-		CPUOvertempThreshold:    75,
-		CPUOvertempStartupDelay: 3 * time.Second,
-		FanMode:                 "auto",
-		FanOnThreshold:          50,
-		FanSwitch:               "all",
-		UseFan:                  true,
+		CPUOvertempCheck:        testPtr(true),
+		CPUOvertempThreshold:    testPtr(75),
+		CPUOvertempStartupDelay: testPtr(3 * time.Second),
+		FanMode:                 testPtr("auto"),
+		FanOnThreshold:          testPtr(50),
+		FanSwitch:               testPtr("all"),
+		UseFan:                  testPtr(true),
 	})
 	if err != nil {
 		t.Fatalf("SetHealth error = %v", err)
@@ -156,6 +185,31 @@ func TestSystemSetHealth(t *testing.T) {
 	}
 }
 
+func TestSystemSetHealthZeroValueDoesNotDisableFan(t *testing.T) {
+	transport := &fakeTransport{}
+	system := (&Client{service: transport}).System()
+
+	if err := system.SetHealth(model.HealthSettings{}); err != nil {
+		t.Fatalf("SetHealth error = %v", err)
+	}
+	if len(transport.runArgs) != 0 {
+		t.Fatalf("Run args = %#v, want empty", transport.runArgs)
+	}
+}
+
+func TestSystemSetRouterboardProtectedBootEncoding(t *testing.T) {
+	transport := &fakeTransport{}
+	system := (&Client{service: transport}).System()
+
+	if err := system.SetRouterboardSettings(model.RouterboardSettings{ProtectedRouterboot: testPtr(true)}); err != nil {
+		t.Fatalf("SetRouterboardSettings error = %v", err)
+	}
+	wantArgs := []string{"=protected-routerboot=enabled"}
+	if !reflect.DeepEqual(transport.runArgs, wantArgs) {
+		t.Fatalf("Run args = %#v, want %#v", transport.runArgs, wantArgs)
+	}
+}
+
 func TestSystemPropagatesTransportErrors(t *testing.T) {
 	wantErr := errors.New("router failed")
 	transport := &fakeTransport{runErr: wantErr}
@@ -167,4 +221,8 @@ func TestSystemPropagatesTransportErrors(t *testing.T) {
 	if err := system.SetIdentity("router"); !errors.Is(err, wantErr) {
 		t.Fatalf("SetIdentity error = %v, want %v", err, wantErr)
 	}
+}
+
+func testPtr[T any](value T) *T {
+	return &value
 }

@@ -1,6 +1,7 @@
 package garbiter
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/dorrit/garbiter/model"
@@ -48,9 +49,18 @@ func (s *SystemAPI) PrintResource() (*model.Resource, error) {
 		return nil, err
 	}
 
-	cpuCount, _ := strconv.Atoi(res["cpu-count"])
-	writeSinceBoot, _ := strconv.ParseInt(res["write-sect-since-reboot"], 10, 64)
-	writeTotal, _ := strconv.ParseInt(res["write-sect-total"], 10, 64)
+	cpuCount, err := parseOptionalInt("cpu-count", res["cpu-count"])
+	if err != nil {
+		return nil, err
+	}
+	writeSinceBoot, err := parseOptionalInt64("write-sect-since-reboot", res["write-sect-since-reboot"])
+	if err != nil {
+		return nil, err
+	}
+	writeTotal, err := parseOptionalInt64("write-sect-total", res["write-sect-total"])
+	if err != nil {
+		return nil, err
+	}
 
 	return &model.Resource{
 		Uptime: res["uptime"],
@@ -87,41 +97,48 @@ func (s *SystemAPI) PrintHealth() (*model.Health, error) {
 		return nil, service.ErrNotConnected
 	}
 
-	res, err := s.svc.Run("/system/health/print")
+	rows, err := s.svc.RunList("/system/health/print")
 	if err != nil {
 		return nil, err
 	}
-	powerConsumption, _ := strconv.ParseFloat(res["power-consumption"], 64)
-	cpuTemperature, _ := strconv.ParseFloat(res["cpu-temperature"], 64)
-	fan1Speed, _ := strconv.Atoi(res["fan1-speed"])
-	fan2Speed, _ := strconv.Atoi(res["fan2-speed"])
-	fan3Speed, _ := strconv.Atoi(res["fan3-speed"])
-	fan4Speed, _ := strconv.Atoi(res["fan4-speed"])
-	boardTemp1, _ := strconv.ParseFloat(res["board-temp1"], 64)
-	boardTemp2, _ := strconv.ParseFloat(res["board-temp2"], 64)
-	psu1Voltage, _ := strconv.ParseFloat(res["psu1-voltage"], 64)
-	psu2Voltage, _ := strconv.ParseFloat(res["psu2-voltage"], 64)
-	psu1Current, _ := strconv.ParseFloat(res["psu1-current"], 64)
-	psu2Current, _ := strconv.ParseFloat(res["psu2-current"], 64)
 
-	voltage, _ := strconv.ParseFloat(res["voltage"], 64)
-	temperature, _ := strconv.ParseFloat(res["temperature"], 64)
-	return &model.Health{
-		Voltage:          voltage,
-		Temperature:      temperature,
-		PowerConsumption: powerConsumption,
-		CPUTemperature:   cpuTemperature,
-		Fan1Speed:        fan1Speed,
-		Fan2Speed:        fan2Speed,
-		Fan3Speed:        fan3Speed,
-		Fan4Speed:        fan4Speed,
-		BoardTemp1:       boardTemp1,
-		BoardTemp2:       boardTemp2,
-		PSU1Voltage:      psu1Voltage,
-		PSU2Voltage:      psu2Voltage,
-		PSU1Current:      psu1Current,
-		PSU2Current:      psu2Current,
-	}, nil
+	health := &model.Health{Sensors: make([]model.HealthSensor, 0, len(rows))}
+	for _, row := range rows {
+		if name := row["name"]; name != "" {
+			value, err := parseHealthNumber(name, row["value"])
+			if err != nil {
+				return nil, err
+			}
+			health.Sensors = append(health.Sensors, model.HealthSensor{
+				Name:     name,
+				Value:    value,
+				RawValue: row["value"],
+				Type:     row["type"],
+				Raw:      row,
+			})
+			applyHealthValue(health, name, value)
+			continue
+		}
+
+		for _, name := range []string{
+			"voltage", "temperature", "power-consumption", "cpu-temperature",
+			"fan1-speed", "fan2-speed", "fan3-speed", "fan4-speed",
+			"board-temp1", "board-temp2", "board-temperature1", "board-temperature2",
+			"psu1-voltage", "psu2-voltage", "psu1-current", "psu2-current",
+		} {
+			if row[name] == "" {
+				continue
+			}
+			value, err := parseHealthNumber(name, row[name])
+			if err != nil {
+				return nil, err
+			}
+			health.Sensors = append(health.Sensors, model.HealthSensor{Name: name, Value: value, RawValue: row[name], Raw: row})
+			applyHealthValue(health, name, value)
+		}
+	}
+
+	return health, nil
 }
 
 func (s *SystemAPI) SetHealth(set model.HealthSettings) error {
@@ -129,39 +146,87 @@ func (s *SystemAPI) SetHealth(set model.HealthSettings) error {
 		return service.ErrNotConnected
 	}
 
+	if set.CPUOvertempStartupDelay != nil && *set.CPUOvertempStartupDelay < 0 {
+		return fmt.Errorf("cpu-overtemp-startup-delay must not be negative")
+	}
+
 	args := []string{}
-	if set.CPUOvertempCheck {
-		args = append(args, "=cpu-overtemp-check=yes")
-	}
-	if set.CPUOvertempThreshold > 0 {
-		args = append(args, "=cpu-overtemp-threshold="+strconv.Itoa(set.CPUOvertempThreshold))
-	}
-	if set.CPUOvertempStartupDelay.Abs() > 0 {
-		args = append(args, "=cpu-overtemp-startup-delay="+set.CPUOvertempStartupDelay.String())
-	}
-	if set.FanMode != "" {
-		args = append(args, "=fan-mode="+set.FanMode)
-	}
-	if FanOnThreshold := set.FanOnThreshold; FanOnThreshold > 0 {
-		args = append(args, "=fan-on-threshold="+strconv.Itoa(FanOnThreshold))
-	}
-	if set.FanSwitch != "" {
-		args = append(args, "=fan-switch="+set.FanSwitch)
-	}
-	if set.UseFan {
-		args = append(args, "=use-fan=yes")
-	} else {
-		args = append(args, "=use-fan=no")
-	}
-
-	if set.Extra != nil {
-		for k, v := range set.Extra {
-			args = append(args, "="+k+"="+v)
-		}
-	}
-
+	args = appendBoolArg(args, "cpu-overtemp-check", set.CPUOvertempCheck)
+	args = appendIntArg(args, "cpu-overtemp-threshold", set.CPUOvertempThreshold)
+	args = appendDurationArg(args, "cpu-overtemp-startup-delay", set.CPUOvertempStartupDelay)
+	args = appendStringPtrArg(args, "fan-mode", set.FanMode)
+	args = appendIntArg(args, "fan-on-threshold", set.FanOnThreshold)
+	args = appendStringPtrArg(args, "fan-switch", set.FanSwitch)
+	args = appendBoolArg(args, "use-fan", set.UseFan)
+	args = appendIntArg(args, "fan-target-temp", set.FanTargetTemp)
+	args = appendIntArg(args, "fan-full-speed-temp", set.FanFullSpeedTemp)
+	args = appendIntArg(args, "fan-min-speed-percent", set.FanMinSpeedPercent)
+	args = appendExtraArgs(args, set.Extra)
 	_, err := s.svc.Run("/system/health/settings/set", args...)
 	return err
+}
+
+func parseHealthNumber(name, raw string) (float64, error) {
+	value, err := strconv.ParseFloat(raw, 64)
+	if err != nil {
+		return 0, fmt.Errorf("parse health sensor %q value %q: %w", name, raw, err)
+	}
+	return value, nil
+}
+
+func parseOptionalInt(name, raw string) (int, error) {
+	if raw == "" {
+		return 0, nil
+	}
+	value, err := strconv.Atoi(raw)
+	if err != nil {
+		return 0, fmt.Errorf("parse %s value %q: %w", name, raw, err)
+	}
+	return value, nil
+}
+
+func parseOptionalInt64(name, raw string) (int64, error) {
+	if raw == "" {
+		return 0, nil
+	}
+	value, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("parse %s value %q: %w", name, raw, err)
+	}
+	return value, nil
+}
+
+func applyHealthValue(health *model.Health, name string, value float64) {
+	switch name {
+	case "voltage":
+		health.Voltage = value
+	case "temperature":
+		health.Temperature = value
+	case "power-consumption":
+		health.PowerConsumption = value
+	case "cpu-temperature":
+		health.CPUTemperature = value
+	case "fan1-speed":
+		health.Fan1Speed = int(value)
+	case "fan2-speed":
+		health.Fan2Speed = int(value)
+	case "fan3-speed":
+		health.Fan3Speed = int(value)
+	case "fan4-speed":
+		health.Fan4Speed = int(value)
+	case "board-temp1", "board-temperature1":
+		health.BoardTemp1 = value
+	case "board-temp2", "board-temperature2":
+		health.BoardTemp2 = value
+	case "psu1-voltage":
+		health.PSU1Voltage = value
+	case "psu2-voltage":
+		health.PSU2Voltage = value
+	case "psu1-current":
+		health.PSU1Current = value
+	case "psu2-current":
+		health.PSU2Current = value
+	}
 }
 
 func (s *SystemAPI) PrintClock() (*model.Clock, error) {
@@ -235,15 +300,17 @@ func (s *SystemAPI) PrintRouterboard() (*model.Routerboard, error) {
 		return nil, err
 	}
 
+	currentFirmware := res["current-firmware"]
+	upgradeFirmware := res["upgrade-firmware"]
 	return &model.Routerboard{
 		Routerboard:           boolFromRouterOS(res["routerboard"]),
 		Model:                 res["model"],
 		SerialNumber:          res["serial-number"],
 		FirmwareType:          res["firmware-type"],
 		FactoryFirmware:       res["factory-firmware"],
-		CurrentFirmware:       res["current-firmware"],
-		UpgradeFirmware:       res["upgrade-firmware"],
-		FirmwareUpgradeNeeded: boolFromRouterOS(res["firmware-upgrade-needed"]),
+		CurrentFirmware:       currentFirmware,
+		UpgradeFirmware:       upgradeFirmware,
+		FirmwareUpgradeNeeded: currentFirmware != "" && upgradeFirmware != "" && currentFirmware != upgradeFirmware,
 		Raw:                   res,
 	}, nil
 }
@@ -257,7 +324,7 @@ func (s *SystemAPI) SetRouterboardSettings(set model.RouterboardSettings) error 
 	args = appendArg(args, "boot-device", set.BootDevice)
 	args = appendArg(args, "cpu-frequency", set.CPUFrequency)
 	args = appendArg(args, "boot-protocol", set.BootProtocol)
-	args = appendBoolArg(args, "protected-routerboot", set.ProtectedRouterboot)
+	args = appendEnabledArg(args, "protected-routerboot", set.ProtectedRouterboot)
 	args = appendExtraArgs(args, set.Extra)
 	_, err := s.svc.Run("/system/routerboard/settings/set", args...)
 	return err

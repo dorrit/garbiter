@@ -1,6 +1,7 @@
 package garbiter_test
 
 import (
+	"crypto/tls"
 	"fmt"
 	"log"
 	"time"
@@ -9,11 +10,15 @@ import (
 	"github.com/dorrit/garbiter/model"
 )
 
-func ExampleConnect() {
-	client, err := garbiter.Connect(
-		"192.168.88.1:8728",
+func ExampleConnectTLS() {
+	client, err := garbiter.ConnectTLS(
+		"router.example.com:8729",
 		"admin",
 		"",
+		&tls.Config{
+			MinVersion: tls.VersionTLS12,
+			ServerName: "router.example.com",
+		},
 		garbiter.WithTimeout(5*time.Second),
 	)
 	if err != nil {

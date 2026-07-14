@@ -56,19 +56,32 @@ type Health struct {
 
 	PSU1Current float64
 	PSU2Current float64
+
+	Sensors []HealthSensor
+}
+
+type HealthSensor struct {
+	Name     string
+	Value    float64
+	RawValue string
+	Type     string
+	Raw      map[string]string
 }
 
 type HealthSettings struct {
 	// CPU protection (common)
-	CPUOvertempCheck        bool
-	CPUOvertempThreshold    int
-	CPUOvertempStartupDelay time.Duration
+	CPUOvertempCheck        *bool
+	CPUOvertempThreshold    *int
+	CPUOvertempStartupDelay *time.Duration
 
 	// Fan (device-dependent)
-	FanMode        string
-	FanOnThreshold int
-	FanSwitch      string
-	UseFan         bool
+	FanMode            *string
+	FanOnThreshold     *int
+	FanSwitch          *string
+	UseFan             *bool
+	FanTargetTemp      *int
+	FanFullSpeedTemp   *int
+	FanMinSpeedPercent *int
 
 	// Future-proof
 	Extra map[string]string

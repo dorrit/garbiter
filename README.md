@@ -8,6 +8,7 @@ Typed RouterOS client built on top of `go-routeros`.
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"log"
 	"time"
@@ -16,11 +17,16 @@ import (
 )
 
 func main() {
-	client, err := garbiter.Connect(
-		"192.168.31.1:8728",
+	client, err := garbiter.ConnectTLS(
+		"router.example.com:8729",
 		"admin",
 		"",
+		&tls.Config{
+			MinVersion: tls.VersionTLS12,
+			ServerName: "router.example.com",
+		},
 		garbiter.WithTimeout(5*time.Second),
+		garbiter.WithCommandTimeout(30*time.Second),
 	)
 	if err != nil {
 		log.Fatalf("connect: %v", err)
@@ -63,6 +69,14 @@ func main() {
 - `Script`: system scripts and script execution.
 
 Raw commands remain available through `Client.Run` and list-style commands through the transport `RunList` method.
+
+## Transport Security
+
+- Prefer `ConnectTLS` on RouterOS API port `8729` with certificate verification enabled.
+- `Connect` uses the plaintext RouterOS API and should only be used on a trusted, protected network.
+- `ConnectTLS` rejects a nil TLS configuration instead of silently falling back to plaintext.
+- Use `ConnectContext`, `ConnectTLSContext`, `RunContext`, and `RunListContext` when callers need cancellation or custom deadlines.
+- `WithTimeout` controls dialing; `WithCommandTimeout` controls commands without an explicit context.
 
 ## Examples
 
@@ -113,3 +127,9 @@ res, err := client.Run("/system/identity/print")
 - Operations that need a RouterOS transport return `service.ErrNotConnected` when the client is nil or not connected.
 - Operations that require a RouterOS item id return `service.ErrInvalidID` when the id is empty.
 - Transport and RouterOS command errors are returned unchanged by typed APIs.
+
+## Update Semantics
+
+- Pointer fields in settings structs are partial updates: nil omits the property, while a non-nil pointer sends it.
+- `Extra` fields are sent in stable key order and can send an empty value to clear a RouterOS property.
+- Reserved `.id` and duplicate typed properties in `Extra` are ignored.

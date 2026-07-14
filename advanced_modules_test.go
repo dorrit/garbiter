@@ -37,7 +37,7 @@ func TestSystemClockPackagesAndRouterboard(t *testing.T) {
 		t.Fatalf("Packages = %#v command = %q", packages, transport.listCmd)
 	}
 
-	transport.runResult = map[string]string{"routerboard": "true", "model": "RB5009", "firmware-upgrade-needed": "yes"}
+	transport.runResult = map[string]string{"routerboard": "true", "model": "RB5009", "current-firmware": "7.14", "upgrade-firmware": "7.15"}
 	routerboard, err := system.PrintRouterboard()
 	if err != nil {
 		t.Fatalf("PrintRouterboard error = %v", err)
