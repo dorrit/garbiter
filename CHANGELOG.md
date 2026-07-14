@@ -5,6 +5,8 @@ contain API changes required for RouterOS correctness and security.
 
 ## Unreleased
 
+## v0.2.0 - 2026-07-14
+
 ### Added
 
 - Context-aware connect and raw command APIs.
