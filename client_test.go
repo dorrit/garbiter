@@ -1,8 +1,10 @@
 package garbiter
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
+	"sync"
 	"testing"
 
 	"github.com/dorrit/garbiter/service"
@@ -25,9 +27,21 @@ type fakeTransport struct {
 	listArgs      []string
 }
 
-func (f *fakeTransport) Connect(address, username, password string, tlsConfig *tls.Config) error {
+func (f *fakeTransport) Connect(address, username, password string) error {
 	f.connectCalled = true
 	return f.connectErr
+}
+
+func (f *fakeTransport) ConnectContext(_ context.Context, address, username, password string) error {
+	return f.Connect(address, username, password)
+}
+
+func (f *fakeTransport) ConnectTLS(address, username, password string, _ *tls.Config) error {
+	return f.Connect(address, username, password)
+}
+
+func (f *fakeTransport) ConnectTLSContext(_ context.Context, address, username, password string, cfg *tls.Config) error {
+	return f.ConnectTLS(address, username, password, cfg)
 }
 
 func (f *fakeTransport) Close() error {
@@ -46,10 +60,18 @@ func (f *fakeTransport) Run(cmd string, args ...string) (map[string]string, erro
 	return f.runResult, f.runErr
 }
 
+func (f *fakeTransport) RunContext(_ context.Context, cmd string, args ...string) (map[string]string, error) {
+	return f.Run(cmd, args...)
+}
+
 func (f *fakeTransport) RunList(cmd string, args ...string) ([]map[string]string, error) {
 	f.listCmd = cmd
 	f.listArgs = append([]string(nil), args...)
 	return f.listResult, f.runErr
+}
+
+func (f *fakeTransport) RunListContext(_ context.Context, cmd string, args ...string) ([]map[string]string, error) {
+	return f.RunList(cmd, args...)
 }
 
 func TestClientWithoutServiceReturnsNotConnected(t *testing.T) {
@@ -117,4 +139,69 @@ func TestClientDelegatesToTransport(t *testing.T) {
 	if !transport.closeCalled {
 		t.Fatal("Close did not call transport")
 	}
+}
+
+func TestConnectTLSRejectsNilConfig(t *testing.T) {
+	client, err := ConnectTLS("192.0.2.1:8729", "admin", "", nil)
+	if client != nil {
+		t.Fatal("ConnectTLS client = non-nil, want nil")
+	}
+	if !errors.Is(err, service.ErrInvalidTLSConfig) {
+		t.Fatalf("ConnectTLS error = %v, want %v", err, service.ErrInvalidTLSConfig)
+	}
+}
+
+func TestClientContextMethodsDelegateToTransport(t *testing.T) {
+	transport := &fakeTransport{
+		runResult:  map[string]string{"name": "router"},
+		listResult: []map[string]string{{"name": "router"}},
+	}
+	c := &Client{service: transport}
+
+	if _, err := c.RunContext(context.Background(), "/system/identity/print"); err != nil {
+		t.Fatalf("RunContext error = %v", err)
+	}
+	if transport.runCmd != "/system/identity/print" {
+		t.Fatalf("RunContext command = %q", transport.runCmd)
+	}
+
+	if _, err := c.RunListContext(context.Background(), "/interface/print"); err != nil {
+		t.Fatalf("RunListContext error = %v", err)
+	}
+	if transport.listCmd != "/interface/print" {
+		t.Fatalf("RunListContext command = %q", transport.listCmd)
+	}
+}
+
+func TestModuleGettersAreConcurrentSafe(t *testing.T) {
+	c := &Client{service: &fakeTransport{}}
+	getters := []func(){
+		func() { c.System() },
+		func() { c.Interface() },
+		func() { c.IP() },
+		func() { c.DHCP() },
+		func() { c.Firewall() },
+		func() { c.Queue() },
+		func() { c.Log() },
+		func() { c.User() },
+		func() { c.Tool() },
+		func() { c.PPP() },
+		func() { c.Hotspot() },
+		func() { c.Certificate() },
+		func() { c.SNMP() },
+		func() { c.Schedule() },
+		func() { c.Script() },
+	}
+
+	var wg sync.WaitGroup
+	for i := 0; i < 100; i++ {
+		for _, getter := range getters {
+			wg.Add(1)
+			go func(getter func()) {
+				defer wg.Done()
+				getter()
+			}(getter)
+		}
+	}
+	wg.Wait()
 }
