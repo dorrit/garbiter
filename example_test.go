@@ -1,6 +1,7 @@
 package garbiter_test
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"log"
@@ -35,9 +36,12 @@ func ExampleConnectTLS() {
 }
 
 func ExampleIPAPI_AddAddress() {
-	client := garbiter.New()
+	client, err := garbiter.NewClient(exampleTransport{})
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	_, err := client.IP().AddAddress(model.IPAddressSet{
+	_, err = client.IP().AddAddress(model.IPAddressSet{
 		Address:   "192.168.88.1/24",
 		Interface: "bridge",
 	})
@@ -47,9 +51,12 @@ func ExampleIPAPI_AddAddress() {
 }
 
 func ExampleFirewallAPI_AddAddressList() {
-	client := garbiter.New()
+	client, err := garbiter.NewClient(exampleTransport{})
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	_, err := client.Firewall().AddAddressList(model.AddressListSet{
+	_, err = client.Firewall().AddAddressList(model.AddressListSet{
 		List:    "blocked",
 		Address: "203.0.113.10",
 	})
@@ -59,7 +66,10 @@ func ExampleFirewallAPI_AddAddressList() {
 }
 
 func ExampleClient_Run() {
-	client := garbiter.New()
+	client, err := garbiter.NewClient(exampleTransport{})
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	res, err := client.Run("/system/identity/print")
 	if err != nil {
@@ -67,4 +77,29 @@ func ExampleClient_Run() {
 	}
 
 	fmt.Println(res["name"])
+}
+
+type exampleTransport struct{}
+
+func (exampleTransport) Connect(string, string, string) error { return nil }
+func (exampleTransport) ConnectContext(context.Context, string, string, string) error {
+	return nil
+}
+func (exampleTransport) ConnectTLS(string, string, string, *tls.Config) error { return nil }
+func (exampleTransport) ConnectTLSContext(context.Context, string, string, string, *tls.Config) error {
+	return nil
+}
+func (exampleTransport) Close() error { return nil }
+func (exampleTransport) Ping() error  { return nil }
+func (exampleTransport) Run(string, ...string) (map[string]string, error) {
+	return map[string]string{"name": "router"}, nil
+}
+func (exampleTransport) RunContext(context.Context, string, ...string) (map[string]string, error) {
+	return map[string]string{"name": "router"}, nil
+}
+func (exampleTransport) RunList(string, ...string) ([]map[string]string, error) {
+	return []map[string]string{}, nil
+}
+func (exampleTransport) RunListContext(context.Context, string, ...string) ([]map[string]string, error) {
+	return []map[string]string{}, nil
 }

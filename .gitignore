@@ -1,1 +1,13 @@
+# Binaries and test artifacts
+bin/
+*.test
+*.out
+coverage.*
+
+# Local tools and environments
+.env
+.idea/
+.vscode/
+
+# Local experiments
 cmd/local-test

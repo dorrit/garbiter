@@ -13,7 +13,12 @@ type RouterOSService struct {
 	mu             sync.Mutex
 	timeout        time.Duration
 	commandTimeout time.Duration
-	client         *routeros.Client
+	client         routerOSClient
+}
+
+type routerOSClient interface {
+	RunContext(ctx context.Context, sentences ...string) (*routeros.Reply, error)
+	Close() error
 }
 
 type Option func(*RouterOSService)
@@ -81,7 +86,7 @@ func (s *RouterOSService) ConnectTLSContext(ctx context.Context, address, userna
 	return s.replaceClient(client)
 }
 
-func (s *RouterOSService) replaceClient(client *routeros.Client) error {
+func (s *RouterOSService) replaceClient(client routerOSClient) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
